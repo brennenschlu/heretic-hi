@@ -130,6 +130,9 @@ body {
 .copyrow span { font-size: 15px; user-select: all; overflow-wrap: anywhere; min-width: 0; }
 .copyrow button { font: 600 12px var(--body); color: var(--fg); background: var(--bubble); border: 0; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
 .contact-panel .primary { text-decoration: none; text-align: center; align-self: stretch; }
+.contact-panel .site-link { align-self: center; font-size: 14px; font-weight: 500; color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+.fine a { color: var(--fg); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.field input[aria-invalid="true"] { border-color: #b3261e; }
 @media (max-width: 520px) { .top { padding-block: 14px; } .logo { height: 32px; } .contact-btn { font-size: 14px; padding: 9px 15px; } }
 @media (max-width: 420px) { .newchat span { display: none; } }
 
@@ -318,6 +321,7 @@ button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2p
           <p>Talk to the Heretic team directly.</p>
           <div class="copyrow"><span id="contactEmail">hi@heretic.wtf</span><button type="button" id="copyEmail">Copy</button></div>
           <a class="primary" href="https://app.usemotion.com/meet/brennen/intro" target="_blank" rel="noopener">Book a call</a>
+          <a class="site-link" href="https://heretic.wtf" target="_blank" rel="noopener">Visit heretic.wtf <span aria-hidden="true">↗</span></a>
         </div>
       </div>
     </div>
@@ -351,7 +355,7 @@ button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2p
         </button>
       </div>
     </form>
-    <p class="fine">HI can make mistakes. They're people. Fast means a few business days, maybe.</p>
+    <p class="fine">HI can make mistakes. They're people. Fast means a few business days, maybe. <a href="https://heretic.wtf" target="_blank" rel="noopener">Made by Heretic ↗</a></p>
   </div>
 </div>
 
@@ -571,8 +575,8 @@ function ticketForm(body) {
     <p class="sub">Your question goes to the Heretic team. Someone replies by email with an idea, not a summary.</p>
     <div class="field"><label for="t-email">Email</label><input id="t-email" type="email" autocomplete="email" placeholder="you@company.com" required></div>
     <div class="two">
-      <div class="field"><label for="t-name">Name (optional)</label><input id="t-name" autocomplete="name"></div>
-      <div class="field"><label for="t-co">Company (optional)</label><input id="t-co" autocomplete="organization"></div>
+      <div class="field"><label for="t-name">Name</label><input id="t-name" autocomplete="name" placeholder="Your name" required></div>
+      <div class="field"><label for="t-co">Company</label><input id="t-co" autocomplete="organization" placeholder="Where you work" required></div>
     </div>
     <div class="hp" aria-hidden="true"><label for="t-web">Website</label><input id="t-web" tabindex="-1" autocomplete="off"></div>
     <p class="err" hidden></p>
@@ -583,10 +587,15 @@ function ticketForm(body) {
     f.addEventListener("submit", async e => {
       e.preventDefault();
       const email = $("#t-email", f).value.trim(), err = $(".err", f), btn = $(".primary", f);
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = "That email doesn't look right. Check for a typo and try again."; err.hidden = false; return; }
+      const name = $("#t-name", f).value.trim(), company = $("#t-co", f).value.trim();
+      const fail = (msg, el) => { err.textContent = msg; err.hidden = false; el.setAttribute("aria-invalid", "true"); el.focus(); };
+      f.querySelectorAll("input").forEach(i => i.removeAttribute("aria-invalid"));
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail("That email doesn't look right. Check for a typo and try again.", $("#t-email", f));
+      if (!name) return fail("Add your name so the team knows who they're answering.", $("#t-name", f));
+      if (!company) return fail("Add your company. The team tailors every answer to it.", $("#t-co", f));
       if ($("#t-web", f).value) return; // bot trap
       err.hidden = true; btn.disabled = true; btn.textContent = "Sending…";
-      state.email = email; state.name = $("#t-name", f).value.trim(); state.company = $("#t-co", f).value.trim();
+      state.email = email; state.name = name; state.company = company;
       const ok = await submit(state.turns.join("\n\n---\n\n"));
       if (!ok) { btn.disabled = false; btn.textContent = "Send to the team"; err.textContent = "That didn't go through. Try again, or email hi@heretic.wtf directly."; err.hidden = false; return; }
       f.remove(); resolve();
